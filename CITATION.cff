@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this environment, please cite the repository and the accompanying scientific study."
+title: "Temporal Sampling Correlation: A Verifiers v1 Environment for Controlled Temporal Correlation in GPT-2 Sampling"
+type: software
+authors:
+  - family-names: Kar
+    given-names: Poulastya
+    affiliation: "Kirori Mal College, University of Delhi"
+repository-code: "https://github.com/arpk10/temporal-sampling-correlation"
+license: MIT
+version: 0.3.1
+date-released: 2026-10-07
+keywords:
+  - stochastic decoding
+  - temporal correlation
+  - autoregressive generation
+  - GPT-2
+  - evaluation
+  - verifiers
