@@ -92,14 +92,17 @@ def generate_condition(
     temperature=TEMPERATURE,
     top_p=TOP_P,
     prompt_id=None,
+    model=None,
+    tokenizer=None,
+    return_trace=False,
 ):
     if not torch.cuda.is_available() and str(device).startswith("cuda"):
         raise RuntimeError("CUDA is unavailable.")
 
-    from transformers import GPT2LMHeadModel, GPT2TokenizerFast
-
-    tokenizer = GPT2TokenizerFast.from_pretrained(model_name)
-    model = GPT2LMHeadModel.from_pretrained(model_name).to(device).eval()
+    if tokenizer is None or model is None:
+        from transformers import GPT2LMHeadModel, GPT2TokenizerFast
+        tokenizer = GPT2TokenizerFast.from_pretrained(model_name)
+        model = GPT2LMHeadModel.from_pretrained(model_name).to(device).eval()
 
     prompt_tokens = tokenizer(
         [prompt] * len(seeds), return_tensors="pt"
@@ -180,5 +183,13 @@ def generate_condition(
                 "token_ids": tokens,
             }
         )
+
+    if return_trace:
+        trace = {
+            "u": u_np,
+            "cdf": cdf_np,
+            "token_ids": np.stack(token_history, axis=1),
+        }
+        return rows, trace
 
     return rows
