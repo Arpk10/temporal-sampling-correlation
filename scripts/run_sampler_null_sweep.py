@@ -8,7 +8,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from transformers import GPT2LMHeadModel, GPT2TokenizerFast
+from transformers import GPT2Config, GPT2TokenizerFast
+from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel
 
 from temporal_sampling_correlation.sampler import ar1_uniform, sample_top_p
 from temporal_sampling_correlation.prompts import PROMPTS, RHO_GRID
