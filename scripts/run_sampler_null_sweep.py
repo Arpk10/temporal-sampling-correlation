@@ -18,8 +18,8 @@ _sklearn = types.ModuleType("sklearn")
 _sklearn.__path__ = []
 _sklearn.__spec__ = importlib.machinery.ModuleSpec("sklearn", loader=None, is_package=True)
 _sklearn.metrics = _metrics
-sys.modules.setdefault("sklearn", _sklearn)
-sys.modules.setdefault("sklearn.metrics", _metrics)
+sys.modules["sklearn"] = _sklearn
+sys.modules["sklearn.metrics"] = _metrics
 import numpy as np
 import pandas as pd
 import torch
