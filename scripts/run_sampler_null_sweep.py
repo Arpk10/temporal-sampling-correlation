@@ -10,9 +10,13 @@ from pathlib import Path
 # utilities even though this diagnostic never calls generation helpers. The
 # local Windows policy blocks SciPy DLL loading, so provide the tiny optional
 # symbol needed during import rather than changing the user environment.
+import importlib.machinery
 _metrics = types.ModuleType("sklearn.metrics")
+_metrics.__spec__ = importlib.machinery.ModuleSpec("sklearn.metrics", loader=None)
 _metrics.roc_curve = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("roc_curve is unavailable in sampler-only diagnostic"))
 _sklearn = types.ModuleType("sklearn")
+_sklearn.__path__ = []
+_sklearn.__spec__ = importlib.machinery.ModuleSpec("sklearn", loader=None, is_package=True)
 _sklearn.metrics = _metrics
 sys.modules.setdefault("sklearn", _sklearn)
 sys.modules.setdefault("sklearn.metrics", _metrics)
