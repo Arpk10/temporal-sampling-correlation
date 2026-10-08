@@ -3,8 +3,19 @@
 Run on a CUDA machine. The model context is frozen along a deterministic
 reference trajectory, so this isolates the inverse-CDF sampler pathway.
 """
-import argparse, json
+import argparse, json, sys, types
 from pathlib import Path
+
+# Transformers 5.x imports sklearn.metrics.roc_curve for optional generation
+# utilities even though this diagnostic never calls generation helpers. The
+# local Windows policy blocks SciPy DLL loading, so provide the tiny optional
+# symbol needed during import rather than changing the user environment.
+_metrics = types.ModuleType("sklearn.metrics")
+_metrics.roc_curve = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("roc_curve is unavailable in sampler-only diagnostic"))
+_sklearn = types.ModuleType("sklearn")
+_sklearn.metrics = _metrics
+sys.modules.setdefault("sklearn", _sklearn)
+sys.modules.setdefault("sklearn.metrics", _metrics)
 import numpy as np
 import pandas as pd
 import torch
