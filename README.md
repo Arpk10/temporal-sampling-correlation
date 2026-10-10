@@ -21,7 +21,7 @@ The environment is deliberately a **measurement primitive**, not a claim that co
 - standard-normal CDF transform to uniforms
 - inverse-CDF top-p sampling
 
-The default sweep contains **100 condition tasks and 1,000 trajectory-level rows**.
+The default sweep contains **100 condition tasks and 1,000 trajectory-level rows**. The source sequence is keyed by rho and seed and reused across the 20 prompts; the 1,000 rows are not 1,000 independent source histories.
 
 The primary trajectory statistic is the lag-1 correlation between source uniform `u_t` and the next-step sampled CDF position. The diagnostic reward is:
 
@@ -42,13 +42,10 @@ The scientific experiment asks whether temporal structure propagates into autore
 ```text
 .
 ├── temporal_sampling_correlation/
-│   ├── taskset.py
-│   ├── harness.py
-│   ├── sampler.py
-│   ├── metrics.py
-│   ├── prompts.py
-│   └── runner.py
 ├── scripts/
+│   ├── run_paired_sampler_null.py
+│   ├── run_sampler_null_sweep.py
+│   └── bootstrap_crossed_sampler_null.py
 ├── tests/
 ├── docs/
 ├── VERIFIERS_REGISTRATION.md
@@ -81,9 +78,28 @@ Omit `--env.taskset.rho` for the default five-condition grid.
 
 ## Scientific result and interpretation
 
-The accompanying GPT-2 study reports a positive dose-response between imposed source correlation and the lag-1 sampling-CDF statistic. The reported primary slope was **0.4646 ± 0.0216**, with prompt-clustered inference and all tested primary endpoint families surviving the stated multiple-testing correction.
+In the 1,000-row paired-control run, the fitted dose-response slopes for the lag-1 sampling-CDF statistic were:
 
-Those numerical results belong to the accompanying scientific experiment; this repository is the reproducibility/evaluation implementation. The current code is a **protocol reproduction on the present GPT-2/PyTorch stack**, not a byte-level reconstruction of the historical runtime.
+| Quantity | Slope | Prompt-only bootstrap 95% CI |
+|---|---:|---:|
+| Full autoregressive system | 0.4647 | [0.4409, 0.4891] |
+| Frozen-context baseline | 0.3635 | [0.3050, 0.4270] |
+| Paired excess (full − frozen) | 0.1012 | [0.0389, 0.1594] |
+
+The paired excess is approximately 21.8% of the full slope. This is an **operational difference relative to the selected frozen-logit baseline**, not evidence that the model explicitly represents source history or `rho`.
+
+Because the same seed-indexed source sequences are reused across prompts, a supplementary crossed prompt/source-seed bootstrap is provided for sensitivity analysis. To reproduce its confidence intervals from the saved trajectory CSV:
+
+```bash
+python scripts/bootstrap_crossed_sampler_null.py \
+  --input results/paired_sampler_null.csv \
+  --output results/paired_sampler_null_crossed_bootstrap.json \
+  --bootstrap 20000 --seed 20261010
+```
+
+The crossed bootstrap resamples prompt IDs and seed IDs independently, reusing each sampled set across all rho conditions to preserve the paired design. The resulting intervals are wider (approximately full [0.307, 0.633], frozen [0.186, 0.527], excess [0.022, 0.193]) and should be reported separately from the prompt-only intervals. The raw CSV and generated JSON are experiment outputs and are not committed by default.
+
+These numerical results belong to the accompanying scientific experiment; this repository is the reproducibility/evaluation implementation. The current code is a **protocol reproduction on the present GPT-2/PyTorch stack**, not a byte-level reconstruction of the historical runtime.
 
 ## Scope
 
