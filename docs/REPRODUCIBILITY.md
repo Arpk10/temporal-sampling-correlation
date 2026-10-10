@@ -35,3 +35,24 @@ The historical reference artifact available during development contains 950 traj
 A full numerical reproduction should record Python, PyTorch, Transformers, model identifier, device/backend, prompt list and ordering, random seeds, temperature, top-p, generated-token count, and benchmark configuration.
 
 The evaluator-side `rho` is explicit by design. This is a controlled measurement environment, not a hidden-parameter inference benchmark.
+
+## 3. Paired frozen-context control and crossed-bootstrap sensitivity
+
+Run the paired full-vs-frozen experiment on a CUDA-capable machine:
+
+```bash
+python scripts/run_paired_sampler_null.py --output results/paired_sampler_null.csv
+```
+
+The same source sequence is used for the full autoregressive and frozen-context conditions for each prompt/rho/seed row. Within each rho, the seed-indexed source sequences are reused across prompts; therefore rows sharing a seed are not independent source draws.
+
+After obtaining the CSV, reproduce the crossed prompt/source-seed sensitivity intervals with:
+
+```bash
+python scripts/bootstrap_crossed_sampler_null.py \
+  --input results/paired_sampler_null.csv \
+  --output results/paired_sampler_null_crossed_bootstrap.json \
+  --bootstrap 20000 --seed 20261010
+```
+
+The bootstrap independently resamples prompt IDs and seed IDs, reusing the selected IDs across rho values. It reports percentile 95% intervals for the full, frozen-context, and paired-excess slopes. These intervals are a sensitivity analysis and should be labelled separately from the prompt-only intervals emitted by the paired experiment script.
