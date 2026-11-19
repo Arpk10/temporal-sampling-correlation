@@ -20,8 +20,8 @@ def test_nucleus_keep_mask_uses_minimal_prefix_and_includes_equality():
 
     from temporal_sampling_correlation.sampler import nucleus_keep_mask
 
-    sorted_probs = torch.tensor([[0.5, 0.3, 0.2], [0.9, 0.05, 0.05]])
-    keep = nucleus_keep_mask(sorted_probs, 0.7)
+    sorted_probs = torch.tensor([[0.5, 0.25, 0.25], [0.9, 0.05, 0.05]])
+    keep = nucleus_keep_mask(sorted_probs, 0.75)
     assert keep.tolist() == [[True, True, False], [True, False, False]]
 
 
