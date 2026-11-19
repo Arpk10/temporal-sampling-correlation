@@ -19,6 +19,31 @@ def ar1_uniform(rho: float, n: int, seed: int) -> np.ndarray:
     )
 
 
+def nucleus_keep_mask(sorted_probs: torch.Tensor, top_p: float) -> torch.Tensor:
+    """Keep the smallest descending-probability prefix with mass >= top_p.
+
+    sorted_probs must have shape (batch, vocabulary) and be sorted in
+    descending order. Equality at the threshold is included, without adding
+    an extra token. This is the canonical protocol used by both repositories.
+    """
+    if not 0.0 < top_p <= 1.0:
+        raise ValueError("top_p must be in (0, 1].")
+    if sorted_probs.ndim != 2 or sorted_probs.shape[-1] == 0:
+        raise ValueError("sorted_probs must be a non-empty 2D tensor.")
+
+    cumulative = torch.cumsum(sorted_probs, dim=-1)
+    threshold = torch.full(
+        (sorted_probs.shape[0], 1),
+        top_p,
+        dtype=cumulative.dtype,
+        device=cumulative.device,
+    )
+    last_kept = torch.searchsorted(cumulative.contiguous(), threshold, right=False)
+    last_kept = last_kept.clamp(max=sorted_probs.shape[-1] - 1)
+    positions = torch.arange(sorted_probs.shape[-1], device=sorted_probs.device)
+    return positions.unsqueeze(0) <= last_kept
+
+
 def safe_corr(a, b):
     a = np.asarray(a)
     b = np.asarray(b)
@@ -36,11 +61,11 @@ def sample_top_p(
     logits = logits / temperature
     probs = torch.softmax(logits, dim=-1)
 
-    sorted_probs, sorted_idx = torch.sort(probs, descending=True, dim=-1)
-    cumsum = torch.cumsum(sorted_probs, dim=-1)
+    if not 0.0 < top_p <= 1.0:
+        raise ValueError("top_p must be in (0, 1].")
 
-    keep = cumsum <= top_p
-    keep[:, 0] = True
+    sorted_probs, sorted_idx = torch.sort(probs, descending=True, dim=-1)
+    keep = nucleus_keep_mask(sorted_probs, top_p)
 
     truncated = sorted_probs * keep
     truncated = truncated / truncated.sum(dim=-1, keepdim=True)
